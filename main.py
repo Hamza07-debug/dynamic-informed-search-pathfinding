@@ -1297,30 +1297,48 @@ class App:
         leg_top = sep2 + 4
         self._section_label("LEGEND", lx, leg_top)
 
+        # Each entry: (fill_color, border_color, label, description_suffix)
+        # Wall uses a lighter display color so the swatch is visible on dark bg
         legend = [
-            (COL_CELL_START,    "Start"),
-            (COL_CELL_GOAL,     "Goal"),
-            (COL_CELL_AGENT,    "Agent"),
-            (COL_CELL_FRONTIER, "Frontier"),
-            (COL_CELL_VISITED,  "Visited"),
-            (COL_CELL_PATH,     "Path"),
-            (COL_CELL_WALL,     "Wall"),
+            (COL_CELL_START,    (100, 180, 255), "Start",    "Blue  — origin node"),
+            (COL_CELL_GOAL,     (180, 120, 255), "Goal",     "Violet — target node"),
+            (COL_CELL_FRONTIER, (255, 200,  60), "Frontier", "Yellow — open set"),
+            (COL_CELL_VISITED,  ( 60, 120, 210), "Visited",  "Blue  — closed set"),
+            (COL_CELL_PATH,     ( 60, 210, 110), "Path",     "Green — solution"),
+            (COL_CELL_AGENT,    ( 60, 230, 210), "Agent",    "Cyan  — current pos"),
+            (( 55,  58,  75),   ( 90,  95, 120), "Wall",     "Dark  — obstacle"),
         ]
-        # 2-column layout with bigger swatches and readable labels
-        col_w  = pw // 2
-        row_h  = 22
-        swatch = 13
-        for i, (sw_col, lbl) in enumerate(legend):
-            cx = lx + (i % 2) * col_w
-            cy = leg_top + 18 + (i // 2) * row_h
-            sw_rect = pygame.Rect(cx, cy + 2, swatch, swatch)
-            draw_rounded_rect(self.screen, sw_col, sw_rect, radius=3)
-            draw_rounded_rect(self.screen, COL_BORDER_HI, sw_rect, radius=3,
-                              border_width=1, border_color=COL_BORDER_HI)
-            self._put_text(lbl, cx + swatch + 6, cy, self.f_xs, COL_TEXT1)
 
-        leg_rows   = (len(legend) + 1) // 2
-        sep3       = leg_top + 18 + leg_rows * row_h + 6
+        SW   = 18    # swatch size in pixels
+        RH   = 26    # row height
+        gy   = leg_top + 20
+
+        for fill, border, name, desc in legend:
+            # ── Swatch (solid fill + bright border so it pops) ───────────────
+            sw_rect = pygame.Rect(lx, gy, SW, SW)
+
+            # Dark background behind swatch so even dark fills are visible
+            bg_rect = pygame.Rect(lx - 2, gy - 2, SW + 4, SW + 4)
+            pygame.draw.rect(self.screen, (38, 42, 58), bg_rect, border_radius=5)
+
+            # Fill
+            pygame.draw.rect(self.screen, fill, sw_rect, border_radius=4)
+            # Bright border — always visible regardless of fill darkness
+            pygame.draw.rect(self.screen, border, sw_rect, 2, border_radius=4)
+
+            # ── Name (bright, bold-style) ────────────────────────────────────
+            self._put_text(name, lx + SW + 8, gy + 2, self.f_sm, COL_TEXT1)
+
+            # ── Description suffix (dim, right-aligned) ──────────────────────
+            ds = self.f_xs.render(desc, True, COL_TEXT2)
+            self.screen.blit(ds, (rx - ds.get_width(), gy + 4))
+
+            # Thin row separator
+            pygame.draw.line(self.screen, COL_BORDER,
+                             (lx, gy + RH - 2), (rx, gy + RH - 2))
+            gy += RH
+
+        sep3 = gy + 4
         draw_hline(self.screen, lx, sep3, rx, COL_BORDER_HI)
 
         # ── 5. KEYBINDS ───────────────────────────────────────────────────────
